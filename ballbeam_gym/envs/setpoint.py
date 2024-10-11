@@ -78,7 +78,8 @@ class BallBeamSetpointEnv(BallBeamBaseEnv):
         super().step()
 
         self.bb.update(self._action_conversion(action))
-        obs = np.array([self.bb.theta, self.bb.x, self.bb.v, self.setpoint])
+        #obs = np.array([self.bb.theta, self.bb.x, self.bb.v, self.setpoint])
+        obs = np.array([float(self.bb.theta), float(self.bb.x), float(self.bb.v), float(self.setpoint)])
 
         # reward squared proximity to setpoint 
         reward = (1.0 - abs(self.setpoint - self.bb.x)/self.bb.L)**2

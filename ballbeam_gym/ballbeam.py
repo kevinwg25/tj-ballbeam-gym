@@ -113,7 +113,8 @@ class BallBeam():
             self.human_rendered = True
             plt.ion()
             fig, ax = plt.subplots(1, 1, figsize=(8, 4))
-            fig.canvas.set_window_title('Beam & Ball')
+            #fig.canvas.set_window_title('Beam & Ball')
+            fig.canvas.manager.set_window_title('Beam & Ball')
             ax.set(xlim = (-2*radius, 2*radius), ylim = (-self.L/2, self.L/2))
             
             # draw ball
