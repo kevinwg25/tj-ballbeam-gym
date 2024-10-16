@@ -15,6 +15,7 @@ env = gym.make('BallBeamSetpoint-v0', **kwargs)
 Kp = 2.0
 Kd = 1.0
 
+env.reset()
 # simulate 1000 steps
 for i in range(1000):   
     # control theta with a PID controller

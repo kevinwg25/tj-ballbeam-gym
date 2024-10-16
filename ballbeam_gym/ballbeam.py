@@ -56,7 +56,7 @@ class BallBeam():
         self.dtheta = 0.0                       # beam angle change (rad)
         self.v_x = 0.0                          # velocity x component
         self.v_y = 0.0                          # velocity y component
-        self.lim_x = [-cos(self.theta)*radius,  # geam limits x
+        self.lim_x = [-cos(self.theta)*radius,  # beam limits x
                        cos(self.theta)*radius] 
         self.lim_y = [-sin(self.theta)*radius,  # beam limits y
                        sin(self.theta)*radius] 
@@ -113,7 +113,6 @@ class BallBeam():
             self.human_rendered = True
             plt.ion()
             fig, ax = plt.subplots(1, 1, figsize=(8, 4))
-            #fig.canvas.set_window_title('Beam & Ball')
             fig.canvas.manager.set_window_title('Beam & Ball')
             ax.set(xlim = (-2*radius, 2*radius), ylim = (-self.L/2, self.L/2))
             
