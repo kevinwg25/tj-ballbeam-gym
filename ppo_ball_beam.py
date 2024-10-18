@@ -131,6 +131,7 @@ def train_ppo(epochs=100, steps_per_epoch=4000):
             if done:
                 buffer.finish_path(last_value=0)
                 state = env.reset()
+                episode_reward = episode_reward / steps_per_epoch
                 episode_rewards.append(episode_reward)
                 episode_reward = 0
 
