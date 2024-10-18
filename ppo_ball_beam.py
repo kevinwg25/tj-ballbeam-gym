@@ -94,9 +94,10 @@ def ppo_loss(old_log_probs, advantages, actions, new_log_probs):
 def critic_loss(returns, values):
     return tf.keras.losses.MeanSquaredError()(returns, values)
 
-def train_ppo(epochs=1, steps_per_epoch=4000):
-    buffer = PPOBuffer(observation_dim, action_dim, steps_per_epoch * epochs)
+def train_ppo(epochs=100, steps_per_epoch=4000):
+    buffer = PPOBuffer(observation_dim, action_dim, steps_per_epoch)
     episode_rewards = []
+    avg_rewards = []
 
     for epoch in range(epochs):
         state = env.reset()
@@ -112,7 +113,6 @@ def train_ppo(epochs=1, steps_per_epoch=4000):
             next_state, reward, done, _ = env.step(action.numpy()[0])
             episode_reward += reward
 
-            # Store the experience in the buffer
             buffer.store(state, action, reward, value, log_prob)
             state = next_state
 
@@ -122,24 +122,35 @@ def train_ppo(epochs=1, steps_per_epoch=4000):
                 episode_rewards.append(episode_reward)
                 episode_reward = 0
 
-        # Get data from buffer and update the networks
-        for _ in range(10):  # 10 epochs of gradient updates
+        for _ in range(10):
             obs, act, adv, ret, logp = buffer.get()
 
-            # Update actor
             with tf.GradientTape() as tape:
                 new_probs = actor_model(obs)
                 actor_loss = ppo_loss(logp, adv, act, new_probs)
             actor_grads = tape.gradient(actor_loss, actor_model.trainable_variables)
             optimizer_actor.apply_gradients(zip(actor_grads, actor_model.trainable_variables))
 
-            # Update critic
             with tf.GradientTape() as tape:
                 value = critic_model(obs)
                 critic_loss_val = critic_loss(ret, value)
             critic_grads = tape.gradient(critic_loss_val, critic_model.trainable_variables)
             optimizer_critic.apply_gradients(zip(critic_grads, critic_model.trainable_variables))
 
-        print(f"Epoch {epoch}, Average Episode Reward: {np.mean(episode_rewards)}")
+        avg_reward = np.mean(episode_rewards)
+        avg_rewards.append(avg_reward)
+        print(f"Epoch {epoch}, Average Episode Reward: {avg_reward}")
+
+        # Plot after each epoch
+        plt.plot(avg_rewards)
+        plt.xlabel('Epochs')
+        plt.ylabel('Average Episode Reward')
+        plt.title('Training Progress - PPO')
+        plt.pause(0.1)  # Add a small pause to update the plot dynamically
+
+    plt.show()
+
+train_ppo(epochs=10, steps_per_epoch=1000)
+
 
 train_ppo()

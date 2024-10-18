@@ -85,7 +85,7 @@ class BallBeamSetpointEnv(BallBeamBaseEnv):
         reward = ((0.5 - abs(self.bb.x)/self.bb.L)*2)**2
         # print(f"L: {self.bb.L}")
         # print(f"x: {self.bb.x}")
-        print(reward)
+        # print(reward)
         
         return obs, reward, self.done, {}
 
