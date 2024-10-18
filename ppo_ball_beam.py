@@ -6,7 +6,13 @@ from tensorflow.keras import layers
 from tensorflow.keras.optimizers import Adam
 
 # Initialize Ball & Beam environment
-env = gym.make('BallBeamSetpoint-v0')
+kwargs = {'timestep': 0.05, 
+          'setpoint': 0.0,
+          'beam_length': 1.0,
+          'max_angle': 0.2,
+          'init_velocity': 0.6}
+
+env = gym.make('BallBeamSetpoint-v0', **kwargs)
 observation_dim = env.observation_space.shape[0]
 action_dim = env.action_space.shape[0]
 
@@ -88,7 +94,7 @@ def ppo_loss(old_log_probs, advantages, actions, new_log_probs):
 def critic_loss(returns, values):
     return tf.keras.losses.MeanSquaredError()(returns, values)
 
-def train_ppo(epochs=100, steps_per_epoch=4000):
+def train_ppo(epochs=1, steps_per_epoch=4000):
     buffer = PPOBuffer(observation_dim, action_dim, steps_per_epoch)
     episode_rewards = []
 
@@ -97,6 +103,7 @@ def train_ppo(epochs=100, steps_per_epoch=4000):
         episode_reward = 0
 
         for step in range(steps_per_epoch):
+            env.render()
             state = state.reshape(1, -1)
             value = critic_model(state)
             action = actor_model(state)
