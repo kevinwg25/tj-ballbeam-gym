@@ -96,7 +96,7 @@ def ppo_loss(old_log_probs, advantages, actions, new_log_probs):
 def critic_loss(returns, values):
     return tf.keras.losses.MeanSquaredError()(returns, values)
 
-def train_ppo(epochs=100, steps_per_epoch=4000):
+def train_ppo(epochs=100, steps_per_epoch=1000):
     buffer = PPOBuffer(observation_dim, action_dim, steps_per_epoch * epochs)
     episode_rewards = []
     avg_rewards = []
@@ -112,6 +112,12 @@ def train_ppo(epochs=100, steps_per_epoch=4000):
     for epoch in range(epochs):
         state = env.reset()
         episode_reward = 0
+
+        # note to future self:
+        # steps per epoch would be a better way to store states since it creates a defined
+        # size for the buffer. If the for loop ended when the ball fell off the beam then
+        # that could take any number of steps, making steps harder to write to the buffer
+        # and to access -Kevin
 
         for step in range(steps_per_epoch):
             env.render()
@@ -130,6 +136,7 @@ def train_ppo(epochs=100, steps_per_epoch=4000):
                 buffer.finish_path(last_value=0)
                 state = env.reset()
                 # episode_reward = episode_reward / steps_per_epoch
+                # ^^ change back
                 episode_rewards.append(episode_reward)
                 episode_reward = 0
 
