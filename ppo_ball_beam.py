@@ -22,7 +22,7 @@ def create_actor():
     inputs = layers.Input(shape=(observation_dim,))
     x = layers.Dense(128, activation='relu')(inputs)
     x = layers.Dense(128, activation='relu')(x)
-    outputs = layers.Dense(action_dim, activation='tanh')(x)  # Tanh for continuous action
+    outputs = layers.Dense(action_dim, activation='tanh')(x) 
     model = tf.keras.Model(inputs, outputs)
     return model
 
@@ -30,7 +30,7 @@ def create_critic():
     inputs = layers.Input(shape=(observation_dim,))
     x = layers.Dense(128, activation='relu')(inputs)
     x = layers.Dense(128, activation='relu')(x)
-    outputs = layers.Dense(1)(x)  # Single value output for the critic
+    outputs = layers.Dense(1)(x) 
     model = tf.keras.Model(inputs, outputs)
     return model
 
@@ -102,13 +102,11 @@ def train_ppo(epochs=100, steps_per_epoch=4000):
     avg_rewards = []
 
     # Initialize the plot window before training starts
-    plt.ion()  # Turn on interactive mode
+    plt.ion() 
     fig, ax = plt.subplots()
     ax.set_xlabel('Epochs')
     ax.set_ylabel('Average Episode Reward')
     ax.set_title('Training Progress - PPO')
-
-    # Create a line object, we will update this line dynamically
     reward_line, = ax.plot([], [], lw=2)
 
     for epoch in range(epochs):
@@ -131,7 +129,7 @@ def train_ppo(epochs=100, steps_per_epoch=4000):
             if done:
                 buffer.finish_path(last_value=0)
                 state = env.reset()
-                episode_reward = episode_reward / steps_per_epoch
+                # episode_reward = episode_reward / steps_per_epoch
                 episode_rewards.append(episode_reward)
                 episode_reward = 0
 
@@ -154,15 +152,14 @@ def train_ppo(epochs=100, steps_per_epoch=4000):
         avg_rewards.append(avg_reward)
         print(f"Epoch {epoch}, Average Episode Reward: {avg_reward}")
 
-        # Dynamically update the plot
-        reward_line.set_data(range(len(avg_rewards)), avg_rewards)  # Update the data in the plot
-        ax.set_xlim(0, epochs)  # Set the x-axis limit
-        ax.set_ylim(0, max(avg_rewards) + 10)  # Adjust the y-axis limit dynamically
-        plt.draw()  # Redraw the plot with new data
-        plt.pause(0.1)  # Pause to update the graph interactively
+        reward_line.set_data(range(len(avg_rewards)), avg_rewards)
+        ax.set_xlim(0, epochs) 
+        ax.set_ylim(0, max(avg_rewards) + 10) 
+        plt.draw() 
+        plt.pause(0.1)
 
-    plt.ioff()  # Turn off interactive mode
-    plt.show()  # Show the final plot
+    plt.ioff() 
+    plt.show() 
 
 train_ppo(epochs=10, steps_per_epoch=1000)
 
