@@ -2,6 +2,7 @@ import gym
 import ballbeam_gym
 import numpy as np
 import tensorflow as tf
+import matplotlib as plt
 from tensorflow.keras import layers
 from tensorflow.keras.optimizers import Adam
 
