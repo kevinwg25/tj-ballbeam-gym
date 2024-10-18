@@ -2,7 +2,8 @@ import gym
 import ballbeam_gym
 import numpy as np
 import tensorflow as tf
-import matplotlib as plt
+import matplotlib
+import matplotlib.pyplot as plt
 from tensorflow.keras import layers
 from tensorflow.keras.optimizers import Adam
 
@@ -96,9 +97,19 @@ def critic_loss(returns, values):
     return tf.keras.losses.MeanSquaredError()(returns, values)
 
 def train_ppo(epochs=100, steps_per_epoch=4000):
-    buffer = PPOBuffer(observation_dim, action_dim, steps_per_epoch)
+    buffer = PPOBuffer(observation_dim, action_dim, steps_per_epoch * epochs)
     episode_rewards = []
     avg_rewards = []
+
+    # Initialize the plot window before training starts
+    plt.ion()  # Turn on interactive mode
+    fig, ax = plt.subplots()
+    ax.set_xlabel('Epochs')
+    ax.set_ylabel('Average Episode Reward')
+    ax.set_title('Training Progress - PPO')
+
+    # Create a line object, we will update this line dynamically
+    reward_line, = ax.plot([], [], lw=2)
 
     for epoch in range(epochs):
         state = env.reset()
@@ -142,14 +153,15 @@ def train_ppo(epochs=100, steps_per_epoch=4000):
         avg_rewards.append(avg_reward)
         print(f"Epoch {epoch}, Average Episode Reward: {avg_reward}")
 
-        # Plot after each epoch
-        plt.plot(avg_rewards)
-        plt.xlabel('Epochs')
-        plt.ylabel('Average Episode Reward')
-        plt.title('Training Progress - PPO')
-        plt.pause(0.1)  # Add a small pause to update the plot dynamically
+        # Dynamically update the plot
+        reward_line.set_data(range(len(avg_rewards)), avg_rewards)  # Update the data in the plot
+        ax.set_xlim(0, epochs)  # Set the x-axis limit
+        ax.set_ylim(0, max(avg_rewards) + 10)  # Adjust the y-axis limit dynamically
+        plt.draw()  # Redraw the plot with new data
+        plt.pause(0.1)  # Pause to update the graph interactively
 
-    plt.show()
+    plt.ioff()  # Turn off interactive mode
+    plt.show()  # Show the final plot
 
 train_ppo(epochs=10, steps_per_epoch=1000)
 
