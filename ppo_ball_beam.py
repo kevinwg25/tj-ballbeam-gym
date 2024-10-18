@@ -95,7 +95,7 @@ def critic_loss(returns, values):
     return tf.keras.losses.MeanSquaredError()(returns, values)
 
 def train_ppo(epochs=1, steps_per_epoch=4000):
-    buffer = PPOBuffer(observation_dim, action_dim, steps_per_epoch)
+    buffer = PPOBuffer(observation_dim, action_dim, steps_per_epoch * epochs)
     episode_rewards = []
 
     for epoch in range(epochs):
