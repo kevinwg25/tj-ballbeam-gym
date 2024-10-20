@@ -96,10 +96,22 @@ def ppo_loss(old_log_probs, advantages, actions, new_log_probs):
 def critic_loss(returns, values):
     return tf.keras.losses.MeanSquaredError()(returns, values)
 
-def train_ppo(epochs=100, steps_per_epoch=1000):
+def sample_action_and_logprob(state, std_dev):
+    mean = actor_model(state)  # Predict mean of the action distribution
+    
+    # Sample action from the normal distribution
+    action = mean + std_dev * tf.random.normal(shape=mean.shape)
+    
+    # Compute log probability of the action
+    log_prob = -0.5 * (((action - mean) / std_dev) ** 2 + tf.math.log(2 * np.pi * std_dev ** 2))
+    
+    return action, log_prob
+
+def train_ppo(epochs=100, steps_per_epoch=100):
     buffer = PPOBuffer(observation_dim, action_dim, steps_per_epoch * epochs)
     episode_rewards = []
     avg_rewards = []
+    std_dev = 0.1
 
     # Initialize the plot window before training starts
     plt.ion() 
@@ -123,13 +135,15 @@ def train_ppo(epochs=100, steps_per_epoch=1000):
             env.render()
             state = state.reshape(1, -1)
             value = critic_model(state)
-            action = actor_model(state)
-            log_prob = tf.math.log(action)
+            # action = actor_model(state)
+            # log_prob = tf.math.log(action)
+            action, log_prob = sample_action_and_logprob(state, std_dev)
             
             next_state, reward, done, _ = env.step(action.numpy()[0])
             episode_reward += reward
 
             buffer.store(state, action, reward, value, log_prob)
+
             state = next_state
 
             if done:
@@ -137,15 +151,30 @@ def train_ppo(epochs=100, steps_per_epoch=1000):
                 state = env.reset()
                 # episode_reward = episode_reward / steps_per_epoch
                 # ^^ change back
+                # print(step)
+                # print(episode_reward)
                 episode_rewards.append(episode_reward)
                 episode_reward = 0
 
         for _ in range(10):
             obs, act, adv, ret, logp = buffer.get()
 
+            valid_indices = slice(0, buffer.ptr)#we only want gradient descent calculations done on filled indices in the buffer
+            logp = tf.convert_to_tensor(logp, dtype=tf.float32)
+            logp = logp[valid_indices]
+            adv = tf.convert_to_tensor(adv, dtype=tf.float32)
+            adv = adv[valid_indices]
+            #print(valid_indices)
             with tf.GradientTape() as tape:
-                new_probs = actor_model(obs)
-                actor_loss = ppo_loss(logp, adv, act, new_probs)
+                new_means = actor_model(obs[valid_indices])
+                new_logprobs = (-0.5 * (((act[valid_indices] - new_means) / std_dev) ** 2 + tf.math.log(2 * np.pi * std_dev ** 2)))#find the probability of taking the action you did before on the new normal distribution
+                new_logprobs = tf.reshape(new_logprobs, [-1])
+                # print(len(logp))
+                # print(len(new_logprobs))
+                # print(logp[-10000])
+                # print(new_logprobs[-10000])
+                
+                actor_loss = ppo_loss(logp, adv, act, new_logprobs)
             actor_grads = tape.gradient(actor_loss, actor_model.trainable_variables)
             optimizer_actor.apply_gradients(zip(actor_grads, actor_model.trainable_variables))
 
@@ -155,20 +184,22 @@ def train_ppo(epochs=100, steps_per_epoch=1000):
             critic_grads = tape.gradient(critic_loss_val, critic_model.trainable_variables)
             optimizer_critic.apply_gradients(zip(critic_grads, critic_model.trainable_variables))
 
-        avg_reward = np.mean(episode_rewards)
+        avg_reward = np.sum(episode_rewards)/steps_per_epoch
         avg_rewards.append(avg_reward)
         print(f"Epoch {epoch}, Average Episode Reward: {avg_reward}")
 
+        episode_rewards = []
+
         reward_line.set_data(range(len(avg_rewards)), avg_rewards)
         ax.set_xlim(0, epochs) 
-        ax.set_ylim(0, max(avg_rewards) + 10) 
+        ax.set_ylim(0, 1.1*max(avg_rewards)) 
         plt.draw() 
         plt.pause(0.1)
 
     plt.ioff() 
     plt.show() 
 
-train_ppo(epochs=10, steps_per_epoch=1000)
+# train_ppo(epochs=10, steps_per_epoch=1000)
 
 
 train_ppo()
