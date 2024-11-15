@@ -1,3 +1,1 @@
-from ballbeam_gym.envs.balance import BallBeamBalanceEnv, VisualBallBeamBalanceEnv
-from ballbeam_gym.envs.setpoint import BallBeamSetpointEnv, VisualBallBeamSetpointEnv
-from ballbeam_gym.envs.throw import BallBeamThrowEnv, VisualBallBeamThrowEnv
+from ballbeam_gym.envs.setpoint import BallBeamEnv

@@ -1,0 +1,13 @@
+OA = original author (of repo)
+
+to do:
+- motor physical limitation
+    - in update() of ballbeam.py, OA made note that "simulation could be improved further by using voltage as input and a motor simulation deciding theta"
+    - insead of angular acceleration, more accurate to use torque
+    - talk to dean about stepper motor from robolab (its a rotary encoder used in 3d printers, very good)
+- in base.py, since bb = BallBeam object hasn't yet been created, the random initial_velocity range is different from reset() when initializing. not a big problem, but it is something that culd be fixed
+- instead of having a bool for random init vel, just make it always do that since its basic robustness
+    - only reason not to do it is to train something faster for reward function configuration
+- check that setpoint is updated
+
+can someone explain why "setting actor output action_std to :  0.4" thing is necessary
