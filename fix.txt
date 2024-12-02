@@ -28,8 +28,7 @@ merge train and test files -> input("Train (1) or Test (2)?")
 make Pause button have an updating timer
  - cant use time.sleep then, have to use some other way to pause testing loop code
  - "# starting a 'blocking' loop to let the user interact fig.canvas.start_event_loop(timeout=-1)"
-state = np.array([self.bb.theta, self.bb.x, self.bb.v, self.bb.setpoint])
-
+when screenshotting with button, dont include the button in output image
 
 notes:
 
