@@ -2,7 +2,6 @@ import numpy as np
 from math import exp
 from gym import spaces
 from ballbeam_gym.envs.base import BallBeamBaseEnv
-from math import sin
 
 class BallBeamEnv(BallBeamBaseEnv):
     """ BallBeamEnv
@@ -21,7 +20,7 @@ class BallBeamEnv(BallBeamBaseEnv):
     reward_scale : list of weights for ang, pos, vel, accel rewards
     """
 
-    def __init__(self, timestep=0.05, max_timesteps=100, unit_conversion=100, beam_length=30, ball_radius=1, max_angle=0.2, max_ang_a=26.18, init_velocity=0, setpoint=0, reward_scale=[1, 1, 1, 1], random_set=True, random_init_vel=True, sleep=1):
+    def __init__(self, timestep=0.05, max_timesteps=100, unit_conversion=100, beam_length=100, ball_radius=5, max_angle=0.2, max_ang_a=26.18, init_velocity=0, setpoint=0, reward_scale=[1, 1, 1, 1], random_set=True, random_init_vel=True, sleep=1):
        
         kwargs = {'timestep': timestep,
                   'max_timesteps': max_timesteps,
@@ -44,7 +43,83 @@ class BallBeamEnv(BallBeamBaseEnv):
             low=np.array([-max_angle, -np.inf, -np.inf, -beam_length/2], dtype=np.float32),
             high=np.array([max_angle, np.inf, np.inf, beam_length/2], dtype=np.float32))
         
+
+    def sign(self, a, b):
+        """
+        if only one is zero = bad
+
+        """
+        if a==0 and b!=0 or a!=0 and b==0:
+            return -1
+        return 1 if a*b>0 else -1
+
+    def xor_plus(self, a, b):
+        """
+        (zero):
+            one 0 = bad, both 0 = good
+        (nonzero):
+            same sign = bad, diff = good -
+            = xor
+        """
+        if a==0 and b==0:
+            return 1
+        if (a==0 and b!=0) or (b!=0 and b==0):
+            return -1
+        return 1 if int(a)^int(b) else -1
+
     def reward(self):
+        d, ve, ang, aa = self.reward_scale
+
+        # Domain adjustments for exponential scaling
+        x_shift = 3  # Horizontal shift for exponential normalization
+        x_scale = 1  # Scale factor for exponential decay
+
+        reward = 0
+
+        # what if dist_set = 0, how take care of that?
+
+        # Distance from setpoint (normalized and squared for quadratic penalty)
+        dist_to_set = self.bb.setpoint - self.bb.x
+        dist = dist_to_set**2/self.bb.L**2
+        
+        reward += (dist_s := d * (dist_reward := (1 - 2 * dist)))
+
+        # Exponential factor for velocity, angle, and angular acceleration
+        exp_factor = exp(-(dist * x_scale - x_shift)) / exp(x_shift)
+
+        # Velocity near setpoint (normalized)
+        vel = self.bb.v**2/self.bb.max_v**2
+        vel_sign = self.sign(self.bb.v, dist_to_set)
+        reward += (vel_s := vel_sign * ve * (vel_reward := (vel * dist + (1-vel)*(1-dist))))
+
+        # Beam angle near zero (normalized)
+        angle = self.bb.theta**2/self.bb.max_angle**2
+        ang_sign = self.xor_plus(self.bb.theta, dist_to_set)
+        reward += (ang_s := ang_sign * ang * (angle_reward := 1 - angle * exp_factor))
+        
+        # Angular acceleration penalty (normalized)
+        ang_acc_norm = self.bb.ang_a**2/self.bb.max_ang_a**2
+        aa_sign = 1 if int(self.bb.theta)^int(self.bb.ang_a) else -1
+        # reward.append(aa * (ang_acc_reward := 1 - ang_acc_norm * exp_factor))
+        reward += (aa_s := aa_sign * aa * (ang_acc_reward := (ang_acc_norm * dist + (1-ang_acc_norm)*(1-dist))))
+
+        # Aggregate reward components and normalize by the sum of weights
+        reward /= sum(self.reward_scale)
+        components = {
+            "dist": dist_reward,
+            "vel": vel_reward,
+            "ang": angle_reward,
+            "ang_acc": ang_acc_reward,
+            "dist_s": dist_s,
+            "vel_s": vel_s,
+            "ang_s": ang_s,
+            "ang_acc_s": aa_s,
+            "total": reward
+        }
+
+        return reward, components
+
+    def old_reward(self):
         d, ve, ang, aa = self.reward_scale
 
         # arbitrary domain for exponential function: D = [0, domain_scale]; increase it for higher penalty to larger distances
@@ -92,7 +167,6 @@ class BallBeamEnv(BallBeamBaseEnv):
         components = {"dist": dist, "vel": vel, "ang": angle, "ang_acc": ang_accel}
 
         return sum_reward, components
-    
         
     def step(self, action):
         """
