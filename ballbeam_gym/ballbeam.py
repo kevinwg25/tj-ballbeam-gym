@@ -44,7 +44,7 @@ class BallBeam():
         self.I = 2/5*self.ball_radius**2                # solid ball inertia (omits mass)
         self.init_velocity = init_velocity/unit_conversion
         self.max_angle = max_angle
-        self.max_ang_a = max_ang_a/unit_conversion
+        self.max_ang_a = max_ang_a
         self.max_a = self.g*sin(max_angle)
         self.max_v = (self.init_velocity**2 + 10/7*self.g*self.L*sin(max_angle))**0.5
         self.reset()
@@ -127,25 +127,23 @@ class BallBeam():
         
         self.t += self.dt
 
-    def clicked(self, event): 
-        # if self.button_locked:
-        #     return
-       
-        # self.button_locked = True # one way to prevent it from getting spammed
-        # self.btn_pause.set_active(False) # another way. neither works
+    def pause(self, event): 
         if self.sleep is not None:
             time.sleep(self.sleep)
-        else:
-            ss_dir = 'screenshots'
-            if not os.path.exists(ss_dir):
-                os.makedirs(ss_dir)
-            ss = sorted(os.listdir(ss_dir))
-            fn = "ep={}_frame={}_tstep={}_time={}".format(self.ep, self.frame, round(self.t,2), datetime.now().strftime("%H;%M;%S;%f")[:-3])
-            self.fig.savefig(f"{ss_dir}/{fn}.png", dpi=self.fig.dpi, bbox_inches='tight')
-       
-        # self.button_locked = False
-        # self.btn_pause.set_active(True)
-       
+
+    def screenshot(self, event):
+        ss_dir = 'screenshots'
+        if not os.path.exists(ss_dir):
+            os.makedirs(ss_dir)
+        fn = "ep={}_frame={}_tstep={}_time={}".format(self.ep, self.frame, round(self.t, 2), datetime.now().strftime("%H;%M;%S;%f")[:-3])
+        self.btn_ss.set_visible(False)
+        if self.sleep:
+            self.btn_pause.set_visible(False)
+        self.fig.savefig(f"{ss_dir}/{fn}.png", dpi=self.fig.dpi, bbox_inches='tight')
+        self.btn_ss.set_visible(True)
+        if self.sleep:
+            self.btn_pause.set_visible(True)
+
     def _init_render(self, mode, draw_text=False):
         """ Initialize rendering """
         if mode == 'human':
@@ -177,18 +175,24 @@ class BallBeam():
                 [self.point*cos(self.theta) + 0.015*self.L, -0.03*self.L + self.point*sin(self.theta)]]))
             ax.patches[1].set_color('green')
 
+            # draw screenshot button
+            ss_ax = plt.axes([0, 0, 1, 1])
+            ss_ax.set_axes_locator(InsetPosition(ax, [0.8, 0.8, 0.16, 0.1]))
+            self.btn_ss = Button(ss_ax, "Screenshot")
+            self.btn_ss.on_clicked(self.screenshot)
+
             # draw button
-            btn_ax = plt.axes([0, 0, 1, 1])
-            btn_ax.set_axes_locator(InsetPosition(ax, [0.8, 0.8, 0.16, 0.1]))
-            btn_text = "Screenshot" if self.sleep is None else "Pause"
-            self.btn_pause = Button(btn_ax, btn_text)
-            self.btn_pause.on_clicked(self.clicked)
-            # self.button_locked = False
+            if self.sleep:
+                pause_ax = plt.axes([0, 0, 1, 1])
+                pause_ax.set_axes_locator(InsetPosition(ax, [0.8, 0.68, 0.16, 0.1]))
+                self.btn_pause = Button(pause_ax, "Pause")
+                self.btn_pause.on_clicked(self.pause)
 
             # set blank components
             if draw_text:
                 self.reward_text = ax.text(0.05, 0.95, "Rewards:\nr: 0.0\nv: 0.0\nθ: 0.0\nα: 0.0", transform=ax.transAxes, fontsize=10, va='top')
-
+                self.scaled_text = ax.text(0.20, 0.95, "Scaled:\nr: 0.0\nv: 0.0\nθ: 0.0\nα: 0.0", transform=ax.transAxes, fontsize=10, va='top')
+                self.reward_total = ax.text(0.35, 0.95, "Total:\n0.0", transform=ax.transAxes, fontsize=10, va='top')
             self.fig = fig
             self.ax = ax
             self.fig.canvas.draw()
@@ -246,7 +250,9 @@ class BallBeam():
             # write reward components
             if rc is not None:
                 self.reward_text.set_text(f"Rewards:\nr: {round(rc['dist'], 3)}\nv: {round(rc['vel'], 3)}\nθ: {round(rc['ang'], 3)}\nα: {round(rc['ang_acc'], 3)}")
-            
+                self.scaled_text.set_text(f"Scaled:\nr: {round(rc['dist_s'], 3)}\nv: {round(rc['vel_s'], 3)}\nθ: {round(rc['ang_s'], 3)}\nα: {round(rc['ang_acc_s'], 3)}")
+                self.reward_total.set_text(f"Total:\n{round(rc['total'], 3)}")
+
             # update figure
             self.fig.canvas.draw()
             self.fig.canvas.flush_events()
