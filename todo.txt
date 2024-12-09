@@ -1,0 +1,32 @@
+(ctrl shift g is shortcut to go to source control on vscode)
+
+velocity exceeds max_v
+
+[v, normal_exp, v*normal_exp]:
+1.0821179853729346 0.9798036972450674 1.060263202923785
+1.206968557462612 0.9464750264337872 1.1423655973291755
+
+
+high priority:
+
+lower margin of error, currently it is too high
+ - ball is 5 cm away from setpoint, but "accuracy" is still >0.9
+instead of exp function to increase penalty, use velocity
+ - exp is arbitrary and should still work fine, but velocity sounds more practical and robust
+
+
+low priority:
+
+do the prev_angle thing in PPO.py act()
+make Pause button have a countdown timer (note that it will not reset at 1, but add another second)
+ - cant use time.sleep then, have to use some other way to pause testing loop code
+ - "# starting a 'blocking' loop to let the user interact fig.canvas.start_event_loop(timeout=-1)"
+
+notes:
+- motor physical limitation
+    - in update() of ballbeam.py, OA made note that "simulation could be improved further by using voltage as input and a motor simulation deciding theta"
+    - insead of angular acceleration, more accurate to use torque
+    - talk to dean about stepper motor from robolab (its a rotary encoder used in 3d printers, very good)
+- make random initial velocity initialization robust (temporarily just a random number between 0,1 but this will change depending on unit conversion)
+    - in base.py, since bb = BallBeam object hasn't yet been created, the random initial_velocity range is different from reset() when initializing. not a big problem, but it is something that culd be fixed
+- maybe test around with max_ep_len for training, as it is currently 10x less than in testing. choose it to be a reasonable value for what we decide is the maximum waiting time for ball to balance
