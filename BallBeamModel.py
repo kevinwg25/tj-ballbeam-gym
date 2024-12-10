@@ -81,8 +81,6 @@ class BallBeamModel:
             fn = "PPO_{}_{}.pth".format(self.env_name, rs)
         elif fn.count(",") == 3:  # hardcoded number of weights = 4
             fn = "PPO_{}_{}.pth".format(self.env_name, "-".join(fn.split(", ")))
-        else:
-            fn+=".pth"
         return fn
 
     def train(self):
@@ -193,10 +191,10 @@ class BallBeamModel:
         print("Finished training at (GMT) : ", end_time := datetime.now().replace(microsecond=0))
         print("Total training time  : ", end_time - start_time)
     
-    def test(self, frame_delay=0, max_ep_len=1000, total_test_episodes=10, fn=None, render=True):
+    def test(self, frame_delay=0, max_ep_len=1000, total_test_episodes=10, render=True):
         env = gym.make(self.env_name, **self.kwargs)
         ppo_agent = PPO(self.state_dim, self.action_dim, self.lr_actor, self.lr_critic, self.gamma, self.K_epochs, self.eps_clip, self.action_std_TEST)
-        fn = self.get_fn("test") if fn is None else fn+".pth"
+        fn = self.get_fn("test")
         print(self.big_block)
         checkpoint_path = self.weights_dir + fn
         ppo_agent.load(checkpoint_path)

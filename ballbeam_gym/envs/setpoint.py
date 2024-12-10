@@ -81,8 +81,7 @@ class BallBeamEnv(BallBeamBaseEnv):
         # Distance from setpoint (normalized and squared for quadratic penalty)
         dist_to_set = self.bb.setpoint - self.bb.x
         dist = dist_to_set**2/self.bb.L**2
-        
-        reward += (dist_s := d * (dist_reward := (1 - 2 * dist)))
+        reward += d * (dist_reward := (1 - 2 * dist))
 
         # Exponential factor for velocity, angle, and angular acceleration
         exp_factor = exp(-(dist * x_scale - x_shift)) / exp(x_shift)
@@ -90,18 +89,18 @@ class BallBeamEnv(BallBeamBaseEnv):
         # Velocity near setpoint (normalized)
         vel = self.bb.v**2/self.bb.max_v**2
         vel_sign = self.sign(self.bb.v, dist_to_set)
-        reward += (vel_s := vel_sign * ve * (vel_reward := (vel * dist + (1-vel)*(1-dist))))
+        reward += vel_sign * ve * (vel_reward := (vel * dist + (1-vel)*(1-dist)))
 
         # Beam angle near zero (normalized)
         angle = self.bb.theta**2/self.bb.max_angle**2
         ang_sign = self.xor_plus(self.bb.theta, dist_to_set)
-        reward += (ang_s := ang_sign * ang * (angle_reward := 1 - angle * exp_factor))
+        reward += ang_sign * ang * (angle_reward := 1 - angle * exp_factor)
         
         # Angular acceleration penalty (normalized)
         ang_acc_norm = self.bb.ang_a**2/self.bb.max_ang_a**2
         aa_sign = 1 if int(self.bb.theta)^int(self.bb.ang_a) else -1
         # reward.append(aa * (ang_acc_reward := 1 - ang_acc_norm * exp_factor))
-        reward += (aa_s := aa_sign * aa * (ang_acc_reward := (ang_acc_norm * dist + (1-ang_acc_norm)*(1-dist))))
+        reward += aa_sign * aa * (ang_acc_reward := (ang_acc_norm * dist + (1-ang_acc_norm)*(1-dist)))
 
         # Aggregate reward components and normalize by the sum of weights
         reward /= sum(self.reward_scale)
@@ -109,12 +108,7 @@ class BallBeamEnv(BallBeamBaseEnv):
             "dist": dist_reward,
             "vel": vel_reward,
             "ang": angle_reward,
-            "ang_acc": ang_acc_reward,
-            "dist_s": dist_s,
-            "vel_s": vel_s,
-            "ang_s": ang_s,
-            "ang_acc_s": aa_s,
-            "total": reward
+            "ang_acc": ang_acc_reward
         }
 
         return reward, components

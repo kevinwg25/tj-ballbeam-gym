@@ -1,6 +1,4 @@
 (ctrl shift g is shortcut to go to source control on vscode)
-git commit --amend --no-edit
-
 
 velocity exceeds max_v
 

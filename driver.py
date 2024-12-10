@@ -19,13 +19,13 @@ save_logs : False, in a csv file
 
 args = {
     'setpoint': 0.3,
-    'reward_scale': [10, 3, 1, 1],
+    'reward_scale': [3, 5, 1, 1],
     'random_set': False,
     'random_init_vel': False,
-    # 'max_ang_a' : 0.6 # changing this doesnt actually cap the acceleration with how our code is written now. changing this just changes the reward
+    'max_ang_a' : 0.6
 }
 
 bbm = BallBeamModel(args=args)
 
-bbm.test(frame_delay=1, total_test_episodes=100, fn='temp.pth')
+bbm.test(frame_delay=0, total_test_episodes=100)
 # bbm.train()
