@@ -1,9 +1,3 @@
-""" 
-Base Environments
-
-BallBeamBaseEnv - Base for all ball & beam environments
-"""
-
 import time, gym
 import numpy as np
 from gym import spaces
@@ -74,11 +68,11 @@ class BallBeamBaseEnv(gym.Env, EzPickle):
     @property
     def done(self):
         """
-        Environment has run a full episode duration
+        Environment has run a full episode duration OR IS COMPLETE?
         """
         if self.max_timesteps is None:
             done = not self.bb.on_beam
         else:
-            done = self.current_step + 1 >= self.max_timesteps or not self.bb.on_beam
+            done = self.current_step + 1 >= self.max_timesteps or not self.bb.on_beam or self.bb.balanced
 
         return done

@@ -2,10 +2,27 @@ import time, gym, os
 from PPO import PPO
 from datetime import datetime
 import matplotlib.pyplot as plt
+import numpy as np
 import ballbeam_gym
 
 class BallBeamModel:
     def __init__(self, args={}, K_epochs=80, eps_clip=0.2, gamma=0.99, lr_actor=0.003, lr_critic=0.01, action_std_decay_rate=0.05, min_action_std=0.1, action_std_decay_freq=int(2.5e5), max_epochs=1000, show_graph=False, save_logs=False):
+        """
+        args parameters
+
+        kwargs : for setpoint
+        K_epochs : 80
+        eps_clip : 0.2
+        gamma : 0.99
+        lr_actor : 0.003
+        lr_critic : 0.01
+        action_std_decay_rate : 0.05
+        min_action_std : 0.1
+        action_std_decay_freq : int(2.5e5)
+        max_epochs : 1000
+        show_graph : False, learning curve
+        save_logs : False, in a csv file
+        """
         self.env_name = "BallBeam-v0"
         self.state_dim = 4
         self.action_dim = 1
@@ -222,3 +239,15 @@ class BallBeamModel:
         print(self.big_block)
         print()
         print("Average test reward:", round(test_running_reward/total_test_episodes, 2))
+
+    def run_pid(self, frame_delay=0, Kp=2, Kv=1, print_angle=False, max_ep_len=1000):
+        env = gym.make(self.env_name, **self.kwargs)
+        for i in range(max_ep_len):
+            theta = np.array(val := Kp*(env.bb.x - env.bb.setpoint) + Kv*(env.bb.v))
+            if print_angle:
+                print(val*180/3.14159)
+            _, _, done, rc = env.step(theta)
+            env.render(rc)
+            time.sleep(frame_delay)
+            if done:
+                env.reset()

@@ -87,31 +87,6 @@ class BallBeam():
         self.theta = theta
         self.ang_v = v_final
 
-        """
-        angular stuff is weird? trace shown below:
-        
-        timestep 1:
-            theta = 0.2 rad
-            self.theta = 0
-            difference = 0.2
-            dt = 0.05
-            velocity = 4
-                - sets self.ang_v = 4
-            accel = (4-0)/0.05 = 80
-         timestep 2:
-            theta = 0.2 rad
-            self.theta = 0.2
-            differnce = 0
-            velocity = 0
-                - sets self.ang_v = 0
-            accel = (0 - 4)/0.05 = -80
-        timestep 3:
-            theta = self.theta = 0.2
-            difference = velocity = 0
-            accel = 0
-        
-        """
-
         x = self.x
         v = self.v
 
@@ -152,9 +127,9 @@ class BallBeam():
             fig, ax = plt.subplots(1, 1, figsize=(8, 4))
             fig.canvas.manager.set_window_title('Ball & Beam')
             ax.set(xlim = (-2*self.beam_radius, 2*self.beam_radius), ylim = (-self.L/2, self.L/2))
-            # ax.set_axis_off() # removes everything for blank background
-            ax.xaxis.set_ticklabels([])
-            ax.yaxis.set_ticklabels([])
+            ax.set_axis_off() # removes everything for blank background
+            # ax.xaxis.set_ticklabels([])
+            # ax.yaxis.set_ticklabels([])
             
             # draw ball
             self.ball_plot = Circle((self.x, self.y), self.ball_radius)
@@ -190,9 +165,10 @@ class BallBeam():
 
             # set blank components
             if draw_text:
-                self.reward_text = ax.text(0.05, 0.95, "Rewards:\nr: 0.0\nv: 0.0\nθ: 0.0\nα: 0.0", transform=ax.transAxes, fontsize=10, va='top')
-                self.scaled_text = ax.text(0.20, 0.95, "Scaled:\nr: 0.0\nv: 0.0\nθ: 0.0\nα: 0.0", transform=ax.transAxes, fontsize=10, va='top')
-                self.reward_total = ax.text(0.35, 0.95, "Total:\n0.0", transform=ax.transAxes, fontsize=10, va='top')
+                self.state_text = ax.text(0.05, 1.05, "State:\nr: 0.0\nv: 0.0\nθ: 0.0\nα: 0.0\na: 0.0", transform=ax.transAxes, fontsize=10, va='top')
+                self.reward_text = ax.text(0.20, 1.05, "Rewards:\nr: 0.0\nv: 0.0\nθ: 0.0\nα: 0.0", transform=ax.transAxes, fontsize=10, va='top')
+                self.scaled_text = ax.text(0.35, 1.05, "Scaled:\nr: 0.0\nv: 0.0\nθ: 0.0\nα: 0.0", transform=ax.transAxes, fontsize=10, va='top')
+                self.reward_total = ax.text(0.50, 1.05, "Final:\n0.0", transform=ax.transAxes, fontsize=10, va='top')
             self.fig = fig
             self.ax = ax
             self.fig.canvas.draw()
@@ -249,9 +225,10 @@ class BallBeam():
 
             # write reward components
             if rc is not None:
-                self.reward_text.set_text(f"Rewards:\nr: {round(rc['dist'], 3)}\nv: {round(rc['vel'], 3)}\nθ: {round(rc['ang'], 3)}\nα: {round(rc['ang_acc'], 3)}")
-                self.scaled_text.set_text(f"Scaled:\nr: {round(rc['dist_s'], 3)}\nv: {round(rc['vel_s'], 3)}\nθ: {round(rc['ang_s'], 3)}\nα: {round(rc['ang_acc_s'], 3)}")
-                self.reward_total.set_text(f"Total:\n{round(rc['total'], 3)}")
+                self.state_text.set_text("State:\nr: {}\nv: {}\nθ: {}\nα: {}\na: {}".format(round(rc['x'], 3), round(rc['v'], 3), round(rc['theta'], 3), round(rc['aa'], 3), round(rc['a'], 3)))
+                self.reward_text.set_text("Rewards:\nr: {}\nv: {}\nθ: {}\nα: {}".format(round(rc['dist'], 3), round(rc['vel'], 3), round(rc['ang'], 3), round(rc['ang_acc'], 3)))
+                self.scaled_text.set_text("Scaled:\nr: {}\nv: {}\nθ: {}\nα: {}".format(round(rc['dist_s'], 3), round(rc['vel_s'], 3), round(rc['ang_s'], 3), round(rc['ang_acc_s'], 3)))
+                self.reward_total.set_text("Final:\n{}".format(round(rc['final'], 3)))
 
             # update figure
             self.fig.canvas.draw()
@@ -270,3 +247,7 @@ class BallBeam():
     @property
     def on_beam(self):
         return self.lim_x[0] < self.x < self.lim_x[1]
+
+    @property
+    def balanced(self, margin=4):
+        return round(self.theta, margin)==0 and round(self.a, margin)==0 and round(self.v, margin)==0 and round(self.x, margin)==self.setpoint

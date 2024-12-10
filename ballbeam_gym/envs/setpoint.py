@@ -106,6 +106,11 @@ class BallBeamEnv(BallBeamBaseEnv):
         # Aggregate reward components and normalize by the sum of weights
         reward /= sum(self.reward_scale)
         components = {
+            "x": self.bb.x,
+            "v": self.bb.v,
+            "theta": self.bb.theta,
+            "aa": self.bb.ang_a,
+            "a": self.bb.a,
             "dist": dist_reward,
             "vel": vel_reward,
             "ang": angle_reward,
@@ -114,7 +119,8 @@ class BallBeamEnv(BallBeamBaseEnv):
             "vel_s": vel_s,
             "ang_s": ang_s,
             "ang_acc_s": aa_s,
-            "total": reward
+            "final": reward,
+
         }
 
         return reward, components
@@ -179,9 +185,9 @@ class BallBeamEnv(BallBeamBaseEnv):
         super().step()
 
         self.bb.update(action)
-        obs = np.array([float(self.bb.theta), float(self.bb.x), float(self.bb.v), float(self.bb.setpoint)])
-        rew, rew_components = self.reward()
-        return obs, rew, self.done, rew_components
+        state = np.array([float(self.bb.theta), float(self.bb.x), float(self.bb.v), float(self.bb.setpoint)])
+        reward, reward_components = self.reward()
+        return state, reward, self.done, reward_components
         
     def reset(self):
         """ 
