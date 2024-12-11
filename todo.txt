@@ -15,6 +15,8 @@ acceleration shown in simulation is not quite what is expected irl,
 high priority:
 lower margin of error, currently it is too high
  - ball is 5 cm away from setpoint, but "accuracy" is still >0.9
+fix signing of the reward components
+ - aa and v
 instead of exp function to increase penalty, use velocity?
  - exp is arbitrary and should still work fine, but velocity sounds more practical and robust?
 
