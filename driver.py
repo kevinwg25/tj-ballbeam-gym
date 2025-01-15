@@ -1,7 +1,7 @@
 from BallBeamModel import BallBeamModel
 
 args = {
-    'setpoint': 0.3,
+    'setpoint': -0.3,
     'reward_scale': [10, 3, 1, 1],
     'random_set': False,
     'random_init_vel': False,
@@ -12,6 +12,7 @@ bbm = BallBeamModel(args=args)
 
 fd = 1
 
-# bbm.test(frame_delay=fd, total_test_episodes=100, fn='temp')
-# bbm.train()
+#bbm.test(frame_delay=fd, total_test_episodes=100, fn='temp')
+#bbm.train()
 bbm.run_pid(frame_delay=fd)
+#bbm.do_nothing(frame_delay=fd)

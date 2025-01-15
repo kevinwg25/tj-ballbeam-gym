@@ -253,3 +253,16 @@ class BallBeamModel:
             if done:
                 state = env.reset() 
 
+    def do_nothing(self, frame_delay=0, max_ep_len=1000):
+        env = gym.make(self.env_name, **self.kwargs)
+        state = env.reset()
+        for i in range(max_ep_len):
+            theta = 40  # No action, keep the beam stationary
+            _, _, done, rc = env.step(theta) 
+            env.render(rc) 
+            time.sleep(frame_delay)
+            if done:
+                state = env.reset() 
+
+
+
