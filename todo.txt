@@ -1,27 +1,13 @@
 (ctrl shift g is shortcut to go to source control on vscode)
-git commit --amend --no-edit
 
+PPO from: https://github.com/nikhilbarhate99/PPO-PyTorch/
+Ballbeam from: https://github.com/simon-larsson/ballbeam-gym
 
-velocity exceeds max_v??
+get reward function working
+angular velocity is set irl, not in code. does not model how an actual servo worksvelocity exceeds max_v??
 
-[v, normal_exp, v*normal_exp]:
-1.0821179853729346 0.9798036972450674 1.060263202923785
-1.206968557462612 0.9464750264337872 1.1423655973291755
+rem to do: reward function import file, have default reward function (functionality)
 
-acceleration shown in simulation is not quite what is expected irl,
- - 9.8sin(0.2) = 1.95 but we have 1.39
-
-
-high priority:
-lower margin of error, currently it is too high
- - ball is 5 cm away from setpoint, but "accuracy" is still >0.9
-instead of exp function to increase penalty, use velocity?
- - exp is arbitrary and should still work fine, but velocity sounds more practical and robust?
-
-
-low priority:
-as simulation runs, have another window showing the graph of reward
- - figure out what happens when moves to another episode
 
 notes:
 - motor physical limitation

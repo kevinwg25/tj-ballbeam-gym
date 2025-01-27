@@ -1,4 +1,4 @@
-import random, time, os
+import random, time, os, numpy
 from datetime import datetime
 from math import sin, cos
 import matplotlib.pyplot as plt
@@ -33,7 +33,7 @@ class BallBeam():
     reward_scale : passesd to reward function to scale each reward component
     """
 
-    def __init__(self, timestep=None, unit_conversion=None, beam_length=None, ball_radius=None, max_angle=None, max_ang_a=None, setpoint=None, init_velocity=None, sleep=None):
+    def __init__(self, timestep=None, unit_conversion=None, beam_length=None, ball_radius=None, max_angle=None, max_ang_a=None, setpoint=None, startpoint=None, init_velocity=None, sleep=None):
         self.g = 9.8
         self.dt = timestep                  
         self.ball_radius = ball_radius/unit_conversion  # cm
@@ -41,6 +41,7 @@ class BallBeam():
         self.beam_radius = self.L/2         
         self.setpoint = setpoint                        # fraction of beam where to balance ball
         self.point = self.setpoint*self.L               # actual balance point on beam (meters)
+        self.startpoint = startpoint
         self.I = 2/5*self.ball_radius**2                # solid ball inertia (omits mass)
         self.init_velocity = init_velocity/unit_conversion
         self.max_angle = max_angle
@@ -60,6 +61,8 @@ class BallBeam():
         self.ang_v = 0
         self.ang_a = 0
         self.x = random.uniform(-0.4,0.4)*self.L
+        if self.startpoint is not None:
+            self.x = self.startpoint*self.L
         self.y = self.ball_radius# + 40 # ball is not actually rendered on top of the beam? (small radius ball is barely visible, as it's inside of the beam)
         self.v = self.init_velocity if init_velocity is None else init_velocity
         self.a = 0
@@ -80,7 +83,12 @@ class BallBeam():
         # motor simulation deciding theta
 
         # should be bounded already?, set action space mean to 0? and range from [-max, max]
-        theta = max(-self.max_angle, min(self.max_angle, action.item())) 
+        # if action is a numpy array, do .item()
+        # else just keep it
+        if isinstance(action, numpy.ndarray):
+            action = action.item()
+
+        theta = max(-self.max_angle, min(self.max_angle, action)) 
         
         v_final = (theta - self.theta)/self.dt
         self.ang_a = (v_final - self.ang_v)/self.dt

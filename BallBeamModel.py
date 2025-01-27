@@ -6,7 +6,7 @@ import numpy as np
 import ballbeam_gym
 
 class BallBeamModel:
-    def __init__(self, args={}, K_epochs=80, eps_clip=0.2, gamma=0.99, lr_actor=0.003, lr_critic=0.01, action_std_decay_rate=0.05, min_action_std=0.1, action_std_decay_freq=int(2.5e5), max_epochs=1000, show_graph=False, save_logs=False):
+    def __init__(self, args={}, K_epochs=80, eps_clip=0.2, gamma=0.99, lr_actor=0.003, lr_critic=0.01, action_std_decay_rate=0.05, min_action_std=0.1, action_std_decay_freq=int(2.5e5), max_epochs=1000, save_logs=False):
         """
         args parameters
 
@@ -26,6 +26,12 @@ class BallBeamModel:
         self.env_name = "BallBeam-v0"
         self.state_dim = 4
         self.action_dim = 1
+        if "action_mode" in args and args["action_mode"] == 'continuous':
+            self.has_continuous_action_space = True
+            self.action_dim = 1
+        else:
+            self.has_continuous_action_space = False
+            self.action_dim = 3 # hardcoded number of actions
         self.weights_dir = "trained/"
 
         """
@@ -45,7 +51,7 @@ class BallBeamModel:
 
         """
         self.kwargs = args
-
+        
         self.K_epochs = K_epochs        # update policy for K epochs
         self.eps_clip = eps_clip        # clip parameter for PPO
         self.gamma = gamma              # discount factor
@@ -67,32 +73,27 @@ class BallBeamModel:
         self.print_freq = self.max_ep_len_TRAIN
         self.log_freq = self.max_ep_len_TRAIN * 2
         self.save_model_freq = int(1e5)
-        self.show_graph = show_graph
         self.save_logs = save_logs
         self.block = '-'*92
         self.big_block = '='*92
 
-    def get_fn(self, action):
-        if action == "test":
-            grammar, extra_option = "", ", or comma-separated list of weights: "
-        else:
-            grammar, extra_option = "or ", ""
-        text = f"Enter filename, blank for default, {grammar}a number for checkpoint (-1 for latest){extra_option}"
+    def get_fn(self):
         scale = self.kwargs["reward_scale"] if "reward_scale" in self.kwargs else [1,1,1,1] # hardcoded number of weights (subject to change?)
         rs = "-".join(str(float(i)) for i in scale)
+        text = 'Enter filename, blank for default, number for checkpoint (-1 for latest), or comma (", ") separated integer weights: '
         fn = input(text)
         if fn.lstrip("-").isnumeric():
-            if int(fn) >= 0:
-                fn = "PPO_{}_{}_{}.pth".format(self.env_name, rs)
+            if (n := int(fn)) >= 0:
+                fn = "PPO_{}_{}_{}.pth".format(self.env_name, rs, n)
             else:
                 files = os.listdir(self.weights_dir)
-                check = []
+                max_n = -1
                 for fn in files:
                     if rs in fn:
                         point = fn.split(self.env_name+"_")[-1][:-4].split("_")[-1]
-                        if point.isnumeric():
-                            check.append(int(point))
-                n = max(check)+1 if check else 0
+                        if point.isnumeric() and (n := int(point))>max_n:
+                            max_n = n
+                n = max_n+1
                 fn = "PPO_{}_{}_{}.pth".format(self.env_name, rs, n)
         elif len(fn) == 0:
             fn = "PPO_{}_{}.pth".format(self.env_name, rs)
@@ -102,7 +103,12 @@ class BallBeamModel:
             fn+=".pth"
         return fn
 
-    def train(self):
+    def train(self, show_graph=True):
+        fn = self.get_fn()
+
+        #  call function for opening tkinter window
+        # name_of_reward_func = functoin_wascalled()
+        # kwarsg['reward_func'] = name_of_reward_func
         env = gym.make(self.env_name, **self.kwargs)
         if self.save_logs:
             log_dir = "logs/" + self.env_name
@@ -114,20 +120,22 @@ class BallBeamModel:
             log_f.write('episode,timestep,reward\n')
         if not os.path.exists(self.weights_dir):
             os.makedirs(self.weights_dir)
-        if self.show_graph:
+        if show_graph:
             plt.ion()
             fig, ax = plt.subplots()
             ax.set_xlabel('Epochs')
             ax.set_ylabel('Average Episode Reward')
             ax.set_title('Training Progress - PPO')
             reward_line, = ax.plot([], [], lw=2)
-        fn=self.get_fn("train")
         checkpoint_path = self.weights_dir + fn
         print(f"\nSaving weights file to {checkpoint_path}\nStarted training at (GMT) : {(start_time := datetime.now().replace(microsecond=0))}")
         print(self.block)
-        ppo_agent = PPO(self.state_dim, self.action_dim, self.lr_actor, self.lr_critic, self.gamma, self.K_epochs, self.eps_clip, self.action_std_TRAIN)
+        ppo_agent = PPO(self.state_dim, self.action_dim, self.lr_actor, self.lr_critic, self.gamma, self.K_epochs, self.eps_clip, self.has_continuous_action_space, self.action_std_TRAIN)
         print_running_reward = print_running_episodes = log_running_reward = log_running_episodes = time_step = i_episode = epoch = 0
         avg_rewards = []
+        
+        
+        
         while time_step <= self.max_training_timesteps:
             state = env.reset()
             current_ep_reward = 0
@@ -148,7 +156,7 @@ class BallBeamModel:
                     ppo_agent.update()
 
                 # decay action std of ouput action distribution
-                if time_step % self.action_std_decay_freq == 0:
+                if self.has_continuous_action_space and time_step % self.action_std_decay_freq == 0:
                     ppo_agent.decay_action_std(self.action_std_decay_rate, self.min_action_std)
 
                 # log in logging file
@@ -173,7 +181,7 @@ class BallBeamModel:
                     print_running_reward = 0
                     print_running_episodes = 0
                     epoch += 1
-                    if self.show_graph:
+                    if show_graph:
                         reward_line.set_data(range(len(avg_rewards)), avg_rewards)
                         ax.set_xlim(0, epoch)
                         ax.set_ylim(0, 1.1*max(avg_rewards))
@@ -197,7 +205,7 @@ class BallBeamModel:
             log_running_reward += current_ep_reward
             log_running_episodes += 1
             i_episode += 1
-        if self.show_graph:
+        if show_graph:
             plt.ioff()
             plt.show()
         if self.save_logs:
@@ -212,11 +220,13 @@ class BallBeamModel:
     
     def test(self, frame_delay=0, max_ep_len=1000, total_test_episodes=10, fn=None, render=True):
         env = gym.make(self.env_name, **self.kwargs)
-        ppo_agent = PPO(self.state_dim, self.action_dim, self.lr_actor, self.lr_critic, self.gamma, self.K_epochs, self.eps_clip, self.action_std_TEST)
-        fn = self.get_fn("test") if fn is None else fn+".pth"
+        ppo_agent = PPO(self.state_dim, self.action_dim, self.lr_actor, self.lr_critic, self.gamma, self.K_epochs, self.eps_clip, self.has_continuous_action_space, self.action_std_TEST)
+        fn = self.get_fn() if fn is None else fn+".pth"
         print(self.big_block)
         checkpoint_path = self.weights_dir + fn
         ppo_agent.load(checkpoint_path)
+        print(f"Loaded weights from: {fn}")
+        print(self.big_block)
         test_running_reward = 0
         reward_components = True
         for ep in range(1, total_test_episodes+1):
@@ -229,10 +239,10 @@ class BallBeamModel:
                 action = ppo_agent.select_action(state)
                 state, reward, done, reward_components = env.step(action)
                 ep_reward += reward
-                if done:
-                    break
                 ppo_agent.buffer.clear()
                 test_running_reward += (avg_reward := ep_reward/frameNum)
+                if done:
+                    break
             print('Episode: {} \t\t\t Avg Reward: {}'.format(ep, round(avg_reward, 3)))
         
         env.close()
@@ -242,7 +252,7 @@ class BallBeamModel:
 
     def run_pid(self, frame_delay=0, Kp=2, Kv=1, print_angle=False, max_ep_len=1000):
         env = gym.make(self.env_name, **self.kwargs)
-        for i in range(max_ep_len):
+        for _ in range(max_ep_len):
             theta = np.array(val := Kp*(env.bb.x - env.bb.setpoint) + Kv*(env.bb.v))
             if print_angle:
                 print(val*180/3.14159)
