@@ -252,12 +252,26 @@ class BallBeamModel:
 
     def run_pid(self, frame_delay=0, Kp=2, Kv=1, print_angle=False, max_ep_len=1000):
         env = gym.make(self.env_name, **self.kwargs)
-        for _ in range(max_ep_len):
+        for i in range(max_ep_len):
             theta = np.array(val := Kp*(env.bb.x - env.bb.setpoint) + Kv*(env.bb.v))
             if print_angle:
-                print(val*180/3.14159)
+                print(val * 180 / 3.14159)
             _, _, done, rc = env.step(theta)
             env.render(rc)
             time.sleep(frame_delay)
             if done:
-                env.reset()
+                state = env.reset() 
+
+    def do_nothing(self, frame_delay=0, max_ep_len=1000):
+        env = gym.make(self.env_name, **self.kwargs)
+        state = env.reset()
+        for i in range(max_ep_len):
+            theta = 40  # No action, keep the beam stationary
+            _, _, done, rc = env.step(theta) 
+            env.render(rc) 
+            time.sleep(frame_delay)
+            if done:
+                state = env.reset() 
+
+
+

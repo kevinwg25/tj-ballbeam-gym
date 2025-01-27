@@ -8,6 +8,25 @@ angular velocity is set irl, not in code. does not model how an actual servo wor
 
 rem to do: reward function import file, have default reward function (functionality)
 
+<<<<<<< HEAD
+=======
+acceleration shown in simulation is not quite what is expected irl,
+ - 9.8sin(0.2) = 1.95 but we have 1.39
+
+
+high priority:
+lower margin of error, currently it is too high
+ - ball is 5 cm away from setpoint, but "accuracy" is still >0.9
+fix signing of the reward components
+ - aa and v
+instead of exp function to increase penalty, use velocity?
+ - exp is arbitrary and should still work fine, but velocity sounds more practical and robust?
+
+
+low priority:
+as simulation runs, have another window showing the graph of reward
+ - figure out what happens when moves to another episode
+>>>>>>> dc4e549529f3775a2f3631660e3d2dcf83533917
 
 notes:
 - motor physical limitation
